@@ -1,7 +1,6 @@
 package com.sample.notificatonlibrary.notification;
 /**
  * 主题型消息订阅接口
- *
  * @param <T>
  */
 public interface TopicSubscriber<T>

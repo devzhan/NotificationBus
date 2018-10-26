@@ -47,6 +47,8 @@ public class ThirdActivity extends AppCompatActivity implements View.OnClickList
         int viewId = v.getId();
         if (viewId==R.id.bt_send){
             NotificationCenter.defaultCenter().publish("top_key",null);
+            EventSubscriber eventSubscriber = new EventSubscriber();
+            NotificationCenter.defaultCenter().publish(eventSubscriber);
         }
     }
 

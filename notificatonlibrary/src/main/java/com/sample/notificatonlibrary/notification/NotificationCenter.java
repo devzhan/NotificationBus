@@ -20,12 +20,11 @@ import java.util.Set;
  *
  * @author owen
  */
-@SuppressWarnings("rawtypes")
 public class NotificationCenter {
     public static final String TAG = "NotificationCenter";
 
-    private Map subscribersByTopic = new HashMap();
-    private Map subscribersByClass = new HashMap();
+    private Map subscribersByTopic = new HashMap();//根据topic 来注册的消息
+    private Map subscribersByClass = new HashMap();//根据对象来注册的消息
     private final Object listenerLock = new Object();
     private Handler mHandler;
 
@@ -92,7 +91,6 @@ public class NotificationCenter {
     protected void removeProxySubscriber(ProxySubscriber proxy, Iterator iter) {
         iter.remove();
         proxy.proxyUnsubscribed();
-        // decWeakRefPlusProxySubscriberCount();
     }
 
     protected boolean subscribe(final Object classTopicOrPatternWrapper,
@@ -132,6 +130,7 @@ public class NotificationCenter {
             return false;// already garbage collected? Weird.
         }
         synchronized (listenerLock) {
+            //判断该top是否已经被注册
             List currentSubscribers = (List) subscriberMap
                     .get(classTopicOrPatternWrapper);
             if (currentSubscribers == null) {
@@ -145,9 +144,6 @@ public class NotificationCenter {
                     Object realCurrentSubscriber = getRealSubscriberAndCleanStaleSubscriberIfNecessary(
                             iterator, currentSubscriber);
                     if (realSubscriber.equals(realCurrentSubscriber)) {
-                        // Already subscribed.
-                        // Remove temporarily, to add to the end of the calling
-                        // list
                         iterator.remove();
                         alreadyExists = true;
                     }
@@ -172,7 +168,6 @@ public class NotificationCenter {
                 new WeakReference<Subscriber>(subscriber));
     }
 
-    @SuppressWarnings("unchecked")
     public boolean subscribeStrongly(Class cl, Subscriber eh) {
         if (eh == null) {
             throw new IllegalArgumentException("Subscriber cannot be null.");
@@ -196,8 +191,6 @@ public class NotificationCenter {
             throw new IllegalArgumentException(
                     "Event subscriber must not be null");
         }
-
-
         return subscribe(topic, subscribersByTopic,
                 new WeakReference<TopicSubscriber>(subscriber));
     }
@@ -357,31 +350,6 @@ public class NotificationCenter {
         }
     }
 
-    public void publish(Object event) {
-        if (event == null) {
-            throw new IllegalArgumentException("Cannot publish null event.");
-        }
-        //publish(event, null, null, getSubscribers(event.getClass()));
-
-        mHandler.post(new PublishRunnable(event, null, null, getSubscribers(event.getClass())));
-    }
-
-    private List getSubscribers(Object classOrTopic, Map subscriberMap) {
-        List result;
-        List subscribers = (List) subscriberMap.get(classOrTopic);
-        // Make a defensive copy of subscribers and veto listeners so listeners
-        // can change the listener list while the listeners are being called
-        // Resolve WeakReferences and unsubscribe if necessary.
-        result = createCopyOfContentsRemoveWeakRefs(subscribers);
-        return result;
-    }
-
-    @SuppressWarnings("unchecked")
-    public <T> List<T> getSubscribersToTopic(String topic) {
-        synchronized (listenerLock) {
-            return getSubscribers(topic, subscribersByTopic);
-        }
-    }
 
     /**
      * 发送消息
@@ -390,9 +358,40 @@ public class NotificationCenter {
      * @param eventObj
      */
     public void publish(String topicName, Object eventObj) {
-        //publish(null, topicName, eventObj, getSubscribersToTopic(topicName));
         mHandler.post(new PublishRunnable(null, topicName, eventObj, getSubscribersToTopic(topicName)));
     }
+
+    /**
+     * topic 为class
+     * @param event
+     */
+    public void publish(Object event) {
+        if (event == null) {
+            throw new IllegalArgumentException("Cannot publish null event.");
+        }
+        mHandler.post(new PublishRunnable(event, null, null, getSubscribers(event.getClass())));
+    }
+
+    private List getSubscribers(Object classOrTopic, Map subscriberMap) {
+        List result;
+        List subscribers = (List) subscriberMap.get(classOrTopic);
+        result = createCopyOfContentsRemoveWeakRefs(subscribers);
+        return result;
+    }
+
+    /**
+     * 根据topic来获取事件的消费者
+     * @param topic
+     * @param <T>
+     * @return
+     */
+    public <T> List<T> getSubscribersToTopic(String topic) {
+        synchronized (listenerLock) {
+            return getSubscribers(topic, subscribersByTopic);
+        }
+    }
+
+
 
     /**
      * All publish methods call this method. Extending classes only have to
@@ -404,7 +403,6 @@ public class NotificationCenter {
      * @param subscribers the subscribers to publish to - must be a snapshot copy
      * @throws IllegalArgumentException if eh or o is null
      */
-    @SuppressWarnings("unchecked")
     protected void publish(final Object event, final String topic,
                            final Object eventObj, final List subscribers) {
         if (event == null && topic == null) {
@@ -418,6 +416,7 @@ public class NotificationCenter {
 
         for (int i = 0; i < subscribers.size(); i++) {
             Object eh = subscribers.get(i);
+            //区分是主题类型还是对象类型
             if (event != null) {
                 Subscriber eventSubscriber = (Subscriber) eh;
                 try {
