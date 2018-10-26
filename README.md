@@ -1,1 +1,1 @@
-# NotificationBus
+# NotificationBus是针对Android优化的发布-订阅事件总线，简化了Android组件间的通信。
