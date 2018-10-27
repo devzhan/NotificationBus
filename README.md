@@ -5,7 +5,7 @@
 2. 采用反射方法invokeSubscriber来消费事件，效率如何。
 基于以上的两个疑问，结合我目前做的项目，大概简单写了个通EventBus 具备相同功能框架 [NotificationCenter](https://github.com/devzhan/NotificationBus)。以下是关于NotificationBus的一些基本讲解。
 # 2.基本使用
- [NotificationCenter](https://github.com/devzhan/NotificationBus)的基本使用和EventBus使用相差无几，均需要注册，发布，反注册这几个步骤。其基本流程图如下：
+ [NotificationBus](https://github.com/devzhan/NotificationBus)的基本使用和EventBus使用相差无几，均需要注册，发布，反注册这几个步骤。其基本流程图如下：
 ![NotificationCenter.png](https://upload-images.jianshu.io/upload_images/1594504-db54bdf42c3f328b.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
 ## 2.1基本结构
 从下图我们可以看出整个框架代码结构非常精简，同EventBus一样也是基于观察者模式来设计的。
