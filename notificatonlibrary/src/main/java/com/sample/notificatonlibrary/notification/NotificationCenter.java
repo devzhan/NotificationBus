@@ -27,6 +27,7 @@ public class NotificationCenter {
     private Map subscribersByClass = new HashMap();//根据对象来注册的消息
     private final Object listenerLock = new Object();
     private Handler mHandler;
+    private static NotificationCenter _instanceCenter;
 
     private NotificationCenter() {
         Looper looper = Looper.getMainLooper();
@@ -34,8 +35,13 @@ public class NotificationCenter {
     }
 
     public static NotificationCenter defaultCenter() {
-        return CenterInstance._instanceCenter;
+        if (_instanceCenter == null) {
+            _instanceCenter = new NotificationCenter();
+        }
+        return _instanceCenter ;
+
     }
+
 
     public void setLooper(Looper looper) {
         if (looper == null)
@@ -48,7 +54,7 @@ public class NotificationCenter {
     }
 
     /**
-     * 删除所有的订阅者
+     * 清除所有的订阅者
      */
     public void clearAllSubscribers() {
         synchronized (listenerLock) {
@@ -112,6 +118,7 @@ public class NotificationCenter {
         }
 
         boolean isWeakProxySubscriber = false;
+        //1
         if (subscriber instanceof ProxySubscriber) {
             ProxySubscriber proxySubscriber = (ProxySubscriber) subscriber;
             isWeakProxySubscriber = proxySubscriber.getReferenceStrength() == ReferenceStrength.WEAK;
@@ -127,13 +134,13 @@ public class NotificationCenter {
         }
 
         if (realSubscriber == null) {
-            return false;// already garbage collected? Weird.
+            return false;
         }
-        synchronized (listenerLock) {
+        synchronized (listenerLock) {//2
             //判断该top是否已经被注册
             List currentSubscribers = (List) subscriberMap
                     .get(classTopicOrPatternWrapper);
-            if (currentSubscribers == null) {
+            if (currentSubscribers == null) {//3
                 currentSubscribers = new ArrayList();
                 subscriberMap.put(classTopicOrPatternWrapper,
                         currentSubscribers);
@@ -141,6 +148,7 @@ public class NotificationCenter {
                 for (Iterator iterator = currentSubscribers.iterator(); iterator
                         .hasNext(); ) {
                     Object currentSubscriber = iterator.next();
+                    //3
                     Object realCurrentSubscriber = getRealSubscriberAndCleanStaleSubscriberIfNecessary(
                             iterator, currentSubscriber);
                     if (realSubscriber.equals(realCurrentSubscriber)) {
@@ -275,6 +283,12 @@ public class NotificationCenter {
         return false;
     }
 
+    /**
+     *
+     * @param cl
+     * @param subscriber
+     * @return
+     */
     public boolean unsubscribe(Class cl, Subscriber subscriber) {
         return unsubscribe(cl, subscribersByClass, subscriber);
     }
@@ -325,6 +339,12 @@ public class NotificationCenter {
         return copyOfSubscribersOrVetolisteners;
     }
 
+    /**
+     * 根据注册对象的类型来查找
+     * @param eventClass
+     * @param <T>
+     * @return
+     */
 
     public <T> List<T> getSubscribersToClass(Class<T> eventClass) {
         List result = null;
@@ -455,7 +475,5 @@ public class NotificationCenter {
         }
     }
 
-    private static class CenterInstance {
-        private static NotificationCenter _instanceCenter = new NotificationCenter();
-    }
+
 }
