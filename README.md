@@ -391,6 +391,7 @@ private boolean removeFromSetResolveWeakReferences(Map map, Object key,
 
 缺点：
 1 .   没有EventBus会区分线程来注册和发布消息，这点不够全面。
+
 以上是根据EventBus 的源码研究和结合项目需求来写的，中间会存在很多问题，希望各位大神多多指教。
 
 
